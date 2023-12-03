@@ -1,25 +1,21 @@
-filter_numbers([], []).
-filter_numbers([H|T], Numbers) :-
+first_digit([H|_], Digit) :-
 	char_type(H, digit),
-	filter_numbers(T, RestNumbers),
-	Numbers = [H|RestNumbers].
-filter_numbers([_|T], Numbers) :-
-	filter_numbers(T, Numbers).
+	Digit = H.
+first_digit([_|T], Digit) :-
+	first_digit(T, Digit).
 
-first([H|_], H).
-
-last([_|T], Last) :-
-	last(T, Last).
-last([H], H).
+lookup_digit(String, Digit) :-
+	string_chars(String, Chars),
+	first_digit(Chars, Digit).
 
 process_lines([First|Rest], Accum, Sum) :-
 	string_chars(First, Chars),
-	filter_numbers(Chars, Numbers),
-	first(Numbers, FirstNumber),
-	last(Numbers, LastNumber),
-	concat_atom([FirstNumber, LastNumber], Concat),
-	atom_number(Concat, Number),
-	process_lines(Rest, Number + Accum, Sum).
+	first_digit(Chars, FirstDigit),
+	reverse(Chars, Reversed),
+	first_digit(Reversed, LastDigit),
+	concat_atom([FirstDigit, LastDigit], Concat),
+	atom_number(Concat, Digit),
+	process_lines(Rest, Digit + Accum, Sum).
 process_lines([], Accum, Sum) :- Sum is Accum, !.
 
 sum_calibration(Input, Sum) :-
@@ -28,8 +24,8 @@ sum_calibration(Input, Sum) :-
 %! test.
 
 read_lines(Stream, [Line|Lines]) :-
-    read_string(Stream, "\n", "\r", _, Line),
-    Line \= "",
+    read_line_to_string(Stream, Line),
+    Line \= end_of_file,
     read_lines(Stream, Lines).
 read_lines(_, []).
 
@@ -40,5 +36,6 @@ load_file(Filename, Lines) :-
 
 main :-
 	load_file("input.txt", Input),
+	write(Input), nl,
 	sum_calibration(Input, Sum),
 	write(Sum), nl.
