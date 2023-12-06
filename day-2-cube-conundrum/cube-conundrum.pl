@@ -2,16 +2,16 @@ max_score("blue", 14).
 max_score("green", 13).
 max_score("red", 12).
 
-color(blue).
-color(green).
-color(red).
+color("blue").
+color("green").
+color("red").
 
 id(N) :- between(1, 100, N).
 
 score([Score, Color]) :-
-    atom_number(Score, ScoreNum),
+    color(Color),
     max_score(Color, Max),
-    between(0, Max, ScoreNum).
+    between(0, Max, Score).
 
 valid_subset([]).
 valid_subset([Set|Rest]) :-
@@ -30,6 +30,12 @@ game(Id, Sets) :-
 my_split_string(Sep, String, Substrings) :-
     split_string(String, Sep, " ", Substrings).
 
+split_set([], []).
+split_set(Set, Output) :-
+    split_string(Set, " ", "", [ScoreStr, Color]),
+    atom_number(ScoreStr, Score),
+    Output = [Score, Color].
+
 parse_line("", _, []).
 parse_line(Line, Id, Sets) :-
     split_string(Line, ":", "", [GameId, Rest]),
@@ -37,7 +43,7 @@ parse_line(Line, Id, Sets) :-
     atom_number(IdStr, Id),
     split_string(Rest, ";", "", Substrings),
     maplist(my_split_string(","), Substrings, ColorSets),
-    maplist(maplist(my_split_string(" ")), ColorSets, Sets).
+    maplist(maplist(split_set), ColorSets, Sets).
 
 sum_valid_games([], 0).
 sum_valid_games([Line|Rest], Sum) :-
