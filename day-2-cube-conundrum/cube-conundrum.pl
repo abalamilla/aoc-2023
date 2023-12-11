@@ -1,10 +1,10 @@
-max_score("blue", 14).
-max_score("green", 13).
-max_score("red", 12).
+max_score(blue, 14).
+max_score(green, 13).
+max_score(red, 12).
 
-color("blue").
-color("green").
-color("red").
+color(blue).
+color(green).
+color(red).
 
 id(N) :- between(1, 100, N).
 
@@ -32,8 +32,9 @@ my_split_string(Sep, String, Substrings) :-
 
 split_set([], []).
 split_set(Set, Output) :-
-    split_string(Set, " ", "", [ScoreStr, Color]),
+    split_string(Set, " ", "", [ScoreStr, ColorStr]),
     atom_number(ScoreStr, Score),
+    atom_string(Color, ColorStr),
     Output = [Score, Color].
 
 parse_line("", _, []).
@@ -56,6 +57,44 @@ sum_valid_games([Line|Rest], Sum) :-
     \+ game(Id, Sets),
     sum_valid_games(Rest, Sum).
 
+get_color_max_score([], _, Accum, Accum).
+get_color_max_score([Score, CurrentColor|Rest], Color, Accum, Max) :-
+    CurrentColor = Color,
+    Score > Accum,
+    get_color_max_score(Rest, Color, Score, Max), !.
+get_color_max_score([Score, CurrentColor|Rest], Color, Accum, Max) :-
+    CurrentColor = Color,
+    Score =< Accum,
+    get_color_max_score(Rest, Color, Accum, Max).
+get_color_max_score([_, CurrentColor|Rest], Color, Accum, Max) :-
+    CurrentColor \= Color,
+    get_color_max_score(Rest, Color, Accum, Max).
+
+get_max_score(Set, Result) :-
+    get_color_max_score(Set, blue, 0, BlueMax),
+    get_color_max_score(Set, green, 0, GreenMax),
+    get_color_max_score(Set, red, 0, RedMax),
+    Result = [BlueMax, GreenMax, RedMax].
+
+multiply([], 1).
+multiply([X|Rest], Result) :-
+    multiply(Rest, RestResult),
+    X > 0,
+    Result is RestResult * X.
+multiply([X|Rest], Result) :-
+    multiply(Rest, RestResult),
+    X =< 0,
+    Result is RestResult.
+
+sum_power_set([], 0).
+sum_power_set([Set|Rest], Sum) :-
+    sum_power_set(Rest, RestSum),
+    parse_line(Set, _, Sets),
+    flatten(Sets, FlatSet),
+    get_max_score(FlatSet, MaxScores),
+    multiply(MaxScores, MaxScore),
+    Sum is RestSum + MaxScore.
+
 %! test.
 
 read_lines(Stream, [Line|Lines]) :-
@@ -71,8 +110,8 @@ load_file(Filename, Lines) :-
 
 main :-
 	load_file("input.txt", Input),
-	sum_valid_games(Input, Sum),
-    %sum_valid_games_v2(Input, SumV2),
-	write(Sum), nl.
-    %write(SumV2), nl.
+    sum_valid_games(Input, Sum),
+    sum_power_set(Input, SumV2),
+    write(Sum), nl,
+    write(SumV2), nl.
 
